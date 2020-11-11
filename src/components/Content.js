@@ -1,14 +1,9 @@
-import { CircularProgress } from "@material-ui/core";
 import React, { useEffect, useState, useReducer } from "react";
-import {
-  Header,
-  Input,
-  Title,
-  Container,
-  Span,
-  List,
-  ListItemWrapper,
-} from "./StyledComponents";
+import ArticleTitle from "./ArticleTitle";
+import Category from "./Category";
+import Loading from "./Loading";
+import Table from "./Table";
+import { Header, Input } from "./StyledComponents";
 
 function reducer(state, action) {
   switch (action.type) {
@@ -47,21 +42,27 @@ function Content() {
   );
 
   useEffect(() => {
-    fetch(
-      `https://en.wikipedia.org/w/api.php?action=parse&format=json&formatversion=2&page=${value}`
-    )
-      .then((res) => res.json())
-      .then(({ parse }) => {
-        parse
-          ? dispatch({
-              type: "GOT_DATA",
-              payload: parse,
-            })
-          : dispatch({
-              type: "NOT_FOUND",
-              payload: "No data found for your search",
-            });
-      });
+    let timeOut = setTimeout(() => {
+      fetch(
+        `https://en.wikipedia.org/w/api.php?action=parse&format=json&formatversion=2&page=${value}`
+      )
+        .then((res) => res.json())
+        .then(({ parse }) => {
+          parse
+            ? dispatch({
+                type: "GOT_DATA",
+                payload: parse,
+              })
+            : dispatch({
+                type: "NOT_FOUND",
+                payload: "No data found for your search",
+              });
+        });
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeOut)
+    };
   }, [value]);
 
   return (
@@ -76,38 +77,12 @@ function Content() {
       </Header>
       {!loading ? (
         <>
-          <Title>
-            <h1>{title}</h1>
-          </Title>
-          <Container>
-            <List>
-              {sections.map((section) => {
-                return (
-                  <ListItemWrapper
-                    indent={section.toclevel}
-                    key={section.number}
-                  >
-                    {`${section.number} ${section.line}`}
-                  </ListItemWrapper>
-                );
-              })}
-            </List>
-          </Container>
-          <Container>
-            Categories:{" "}
-            {categories.map((category, i) => {
-              return !category.hidden ? (
-                <Span key={i}>{category.category.split("_").join(" ")}</Span>
-              ) : (
-                ""
-              );
-            })}
-          </Container>
+          <ArticleTitle title={title} />
+          <Table sections={sections} />
+          <Category categories={categories} />
         </>
       ) : (
-        <Title>
-          <CircularProgress />
-        </Title>
+        <Loading />
       )}
     </>
   );
